@@ -1,5 +1,5 @@
 <template>
-  <Menu ref="headMenu" mode="horizontal" theme="dark" :active-name="page" @on-select="enterDiagram">
+  <Menu ref="headMenu" mode="horizontal" theme="dark" :active-name="currPage" @on-select="enterDiagram">
     <div class="layout-nav">
       <router-link to="/setting">
         <MenuItem name="setting">
@@ -13,7 +13,7 @@
         评价系统
         </MenuItem>
       </router-link>
-      <router-link :to="isAllPageSelected ? '/diagram' : '/'">
+      <router-link :to="isAllPageSelected ? '/diagram' : '#'">
         <MenuItem name="diagram">
           <Icon type="ios-keypad"></Icon>
           结果展示
@@ -44,10 +44,8 @@ export default {
     },
     enterDiagram: function (name) {
       if (name === 'diagram') {
-        console.log(this.isAllPageSelected)
         if (!this.isAllPageSelected) {
           this.$Message.error('有问题未回答，请全部完成后再进入结果展示')
-          this.page = 'questionnaire'
           this.$refs.headMenu.currentActiveName = this.page
         }
       }
@@ -56,6 +54,9 @@ export default {
   computed: {
     isAllPageSelected: function () {
       return this.$store.state.Score.allPageSelected
+    },
+    currPage: function () {
+      return this.page
     }
   }
 }

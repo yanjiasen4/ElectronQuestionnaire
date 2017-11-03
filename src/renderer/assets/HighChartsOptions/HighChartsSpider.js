@@ -12,7 +12,7 @@ export default {
       size: '80%'
     },
     xAxis: {
-      categories: ['整体风貌', '建筑风貌', '道路风貌', '开放空间', '地域文化景观'],
+      categories: ['整体风貌', '建筑风貌', '道路风貌', '开放空间', '地域文化景观', '城镇风貌综合评分'],
       tickmarkPlacement: 'on',
       lineWidth: 0
     },

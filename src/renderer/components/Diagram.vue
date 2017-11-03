@@ -47,7 +47,13 @@
           </Row>
             <header class="result-header"></header>
             <div class="tail-wrapper">
-              <Button class="tail-button" size="large" @click="exportXlsx">导出Excel</Button>
+              <Button class="tail-button" size="large" @click="inputName = true">导出Excel</Button>
+              <Modal
+                v-model="inputName"
+                title="导出Excel文件名设置"
+                @on-ok="exportXlsx(exportName)">
+                <Input v-model="exportName" placeholder="请输入保存文件名"></Input>
+              </Modal>
               <router-link to="/mainpage">
                 <Button class="tail-button" size="large" @click="refreshPage">返回问卷</Button>
               </router-link>
@@ -61,7 +67,7 @@
 </template>
 
 <script>
-import xlsx from 'better-xlsx'
+import XLSX from 'xlsx'
 import fs from 'fs'
 import TopMenu from './TopMenu'
 import QuestionView from '../assets/QuestionDataView'
@@ -103,10 +109,18 @@ export default {
     }
 
     totalLevel = this.calcEvaluateLevel(totalScore)
-    console.log(rootLevel)
+
+    let diagramRootLevel = rootLevel.concat()
+    let diagramRootScore = rootScore.concat()
+    diagramRootLevel.push({
+      name: '城镇风貌综合评分',
+      level: totalLevel
+    })
+    diagramRootScore.push(totalScore)
+
     var seriesData = [{
       name: '城镇',
-      data: rootScore
+      data: diagramRootScore
     }]
 
     columnOptions.series = splineOptions.series = spiderOptions.series = seriesData
@@ -118,12 +132,16 @@ export default {
       totalLevel: totalLevel,
       rootScore: rootScore,
       rootLevel: rootLevel,
+      diagramRootLevel: diagramRootLevel,
+      diagramRootScore: diagramRootScore,
       diagramType: 'column', // column spline spider
       aspectArray: QuestionView.aspectArray,
       currLevel: rootLevel,
       currScore: rootScore,
       currSelect: 'total', // total, 0, 1, 2, 3, 4
-      aspectMap: QuestionView.aspectMap
+      aspectMap: QuestionView.aspectMap,
+      inputName: false,
+      exportName: ''
     }
   },
   methods: {
@@ -158,9 +176,10 @@ export default {
       let aspectLevel = []
       let aspectScore = []
       if (aspect === -1) {
-        aspectLevel = this.rootLevel
-        aspectScore = this.rootScore
+        aspectLevel = this.diagramRootLevel
+        aspectScore = this.diagramRootScore
       } else {
+        console.log('aspect:', aspect)
         let aspectInfo = this.aspectArray[aspect]
 
         let scoreData = this.$store.state.Score.scoreArray
@@ -205,57 +224,124 @@ export default {
       splineChart.series[0].update(diagramData)
       spiderChart.series[0].update(diagramData)
     },
-    exportXlsx: function () {
-      const file = new xlsx.File()
+    exportXlsx: function (filename) {
+      const wb = XLSX.utils.book_new()
 
-      const style = new xlsx.Style()
+      let arrayHeader = []
 
-      style.align.h = 'center'
-      style.align.v = 'center'
-
-      // total stat
-      const tsheet = file.addSheet('城镇风貌综合评估结果')
-      const header = tsheet.addRow()
-
-      console.log(this.rootLevel.length)
-      const score = tsheet.addRow()
-
-      for (let i = 0; i < this.rootLevel.length; i++) {
-        const hc = header.addCell()
-        const sc = score.addCell()
-
-        hc.value = this.rootLevel[i].name
-        sc.value = this.rootScore[i]
-
-        hc.style.align.v = 'center'
-        hc.style.align.h = sc.style.align.h = 'center'
+      for (let i in this.diagramRootLevel) {
+        arrayHeader.push(this.diagramRootLevel[i].name)
       }
+
+      const ws = XLSX.utils.aoa_to_sheet([arrayHeader, this.diagramRootScore])
+      XLSX.utils.book_append_sheet(wb, ws, '城镇风貌综合评估结果')
 
       for (let index in this.rootLevel) {
-        const sheet = file.addSheet(this.rootLevel[index].name)
         let aspectInfo = this.genAspectArray(index)
-
-        const header = sheet.addRow()
-        const score = sheet.addRow()
+        let subArrayHeader = []
+        let subArrayContent = []
 
         for (let j in aspectInfo.level) {
-          const hc = header.addCell()
-          const sc = score.addCell()
-
-          hc.value = aspectInfo.level[j].name
-          sc.value = aspectInfo.score[j]
-
-          hc.style.align.v = 'center'
-          hc.style.align.h = sc.style.align.h = 'center'
+          subArrayHeader.push(aspectInfo.level[j].name)
+          subArrayContent.push(aspectInfo.score)
         }
+
+        const ws = XLSX.utils.aoa_to_sheet([subArrayHeader, subArrayContent])
+        XLSX.utils.book_append_sheet(wb, ws, this.rootLevel[index].name)
       }
 
-      file
-        .saveAs()
-        .pipe(fs.createWriteStream('exporting.xlsx'))
-        .on('finish', () => {
-          this.$Message.success('导出Excel成功,保存目录为当前目录')
-        })
+      XLSX.writeFile(wb, this.exportName + '.xlsx')
+
+      let dataExists = true
+      try {
+        fs.accessSync('data.xlsx')
+      } catch (e) {
+        dataExists = false
+      }
+
+      if (!dataExists) {
+        // throw new Error('ERROR: failed to open file: data.xlsx')
+        const dwb = XLSX.utils.book_new()
+
+        let darrayHeader = ['项']
+
+        for (let i in this.diagramRootLevel) {
+          darrayHeader.push(this.diagramRootLevel[i].name)
+        }
+
+        let darrayContent1 = ['总值']
+        let darrayContent2 = ['平均值']
+        for (let i in this.diagramRootScore) {
+          darrayContent1.push(this.diagramRootScore[i])
+          darrayContent2.push(this.diagramRootScore[i])
+        }
+        const dws = XLSX.utils.aoa_to_sheet([darrayHeader, darrayContent1, darrayContent2])
+        XLSX.utils.book_append_sheet(dwb, dws, '城镇风貌综合评估结果')
+
+        for (let index in this.rootLevel) {
+          let aspectInfo = this.genAspectArray(index)
+
+          let dsubArrayHeader = ['项']
+          let dsubArrayContent1 = ['总值']
+          let dsubArrayContent2 = ['平均值']
+
+          for (let j in aspectInfo.level) {
+            dsubArrayHeader.push(aspectInfo.level[j].name)
+            dsubArrayContent1.push(aspectInfo.score)
+            dsubArrayContent2.push(aspectInfo.score)
+          }
+
+          const dws = XLSX.utils.aoa_to_sheet([dsubArrayHeader, dsubArrayContent1, dsubArrayContent2])
+          XLSX.utils.book_append_sheet(dwb, dws, this.rootLevel[index].name)
+        }
+        XLSX.writeFile(dwb, 'data.xlsx')
+      } else {
+        this.updateDataXLSX()
+      }
+    },
+    updateDataXLSX: function () {
+      // this.readDataXLSX()
+      let workbook = XLSX.readFile('data.xlsx')
+      let sheetNames = workbook.SheetNames
+      const nws = XLSX.utils.book_new()
+      let subAspectIndex = 0
+
+      for (let sheet of sheetNames) {
+        let ws = workbook.Sheets[sheet]
+        let jsonResult = XLSX.utils.sheet_to_json(ws, {header: 1, raw: true})
+        let statCount = this.calcDataCount(jsonResult)
+        let result = [jsonResult[0], ['总值'], ['平均值']]
+
+        if (sheet === '城镇风貌综合评估结果') {
+          for (let j = 1; j < jsonResult[0].length; j++) {
+            jsonResult[1][j] += this.diagramRootScore[j - 1]
+            jsonResult[2][j] = jsonResult[1][j] / statCount
+
+            result[1].push(jsonResult[1][j])
+            result[2].push(jsonResult[1][j] / (statCount + 1))
+          }
+          let dws = XLSX.utils.aoa_to_sheet(result)
+
+          XLSX.utils.book_append_sheet(nws, dws, '城镇风貌综合评估结果')
+        } else {
+          let aspectInfo = this.genAspectArray(subAspectIndex)
+          for (let j = 1; j < jsonResult[0].length; j++) {
+            jsonResult[1][j] += aspectInfo.score[j - 1]
+            jsonResult[2][j] = jsonResult[1][j] / statCount
+
+            result[1].push(jsonResult[1][j])
+            result[2].push(jsonResult[1][j] / (statCount + 1))
+          }
+          let dws = XLSX.utils.aoa_to_sheet(result)
+
+          XLSX.utils.book_append_sheet(nws, dws, this.rootLevel[subAspectIndex].name)
+          subAspectIndex += 1
+        }
+      }
+      XLSX.writeFile(nws, 'data.xlsx')
+    },
+    calcDataCount: function (data) {
+      return Math.round(data[1][1] / data[2][1])
     },
     refreshPage: function () {
       this.$store.commit({

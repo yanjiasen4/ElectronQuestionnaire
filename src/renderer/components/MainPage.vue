@@ -28,7 +28,7 @@
             <div class="button-page">     
               <div v-if="isLastPage">
                 <Button v-if="!isFirstPage" class="button-wrapper" v-on:click="prevPage">上一题</Button>
-                <router-link :to="isAllPageSelected ? '/diagram': '/'">
+                <router-link :to="isAllPageSelected ? '/diagram': '/diagram'">
                   <Button type="success" class="button-wrapper" v-on:click="commitAllPage">确认提交</Button>
                 </router-link>
               </div>
@@ -109,7 +109,6 @@
         var subQuesNum = pageQuestions.length
         for (let i = 0; i < subQuesNum; i++) {
           if (pageQuestions[i].answer === '') {
-            console.log(i)
             return false
           }
         }
