@@ -1,34 +1,76 @@
 <template>
 <div class="layout">
-  <top-menu v-bind:page="'setting'"></top-menu>
+  <top-menu v-bind:page="'setting-parm'"></top-menu>
   <Row class="setting-content">
-    <div class="slider-wrapper">
-      整体风貌
-      <Slider v-model="weight0" show-input :tip-format="format"></Slider>
-    </div>
-    <div class="slider-wrapper">
-      建筑风貌
-      <Slider v-model="weight1" show-input :tip-format="format"></Slider>
-    </div>
-    <div class="slider-wrapper">
-      道路风貌
-      <Slider v-model="weight2" show-input :tip-format="format"></Slider>
-    </div>
-    <div class="slider-wrapper">
-      开放空间
-      <Slider v-model="weight3" show-input :tip-format="format"></Slider>
-    </div>
-    <div class="slider-wrapper">
-      地域文化景观
-      <Slider v-model="weight4" show-input :tip-format="format"></Slider>
-    </div>
+    <Col span="20">
+      <Row class="slider-wrapper" type="flex" align="middle">
+        <Col span="6" class="setting-text">
+          <span>指标一 整体风貌 权重值：</span>
+        </Col>
+        <Col span="17">
+          <Slider v-model="weight0" show-input :tip-format="format"></Slider>
+        </Col>
+        <Col span="1">
+          <span class="percent">%</span>
+        </Col>
+      </Row>
+      <Row class="slider-wrapper" type="flex" align="middle">
+        <Col span="6" class="setting-text">
+          <span>指标二 建筑风貌 权重值：</span>
+        </Col>
+        <Col span="17">
+          <Slider v-model="weight1" show-input :tip-format="format"></Slider>
+        </Col>
+        <Col span="1">
+          <span class="percent">%</span>
+        </Col>
+      </Row>
+      <Row class="slider-wrapper" type="flex" align="middle">
+        <Col span="6" class="setting-text">
+          <span>指标三 道路风貌 权重值：</span>
+        </Col>
+        <Col span="17">
+          <Slider v-model="weight2" show-input :tip-format="format"></Slider>
+        </Col>
+        <Col span="1">
+          <span class="percent">%</span>
+        </Col>
+      </Row>
+      <Row class="slider-wrapper" type="flex" align="middle">
+        <Col span="6" class="setting-text">
+          <span>指标四 开放空间 权重值：</span>
+        </Col>
+        <Col span="17">
+          <Slider v-model="weight3" show-input :tip-format="format"></Slider>
+        </Col>
+        <Col span="1">
+          <span class="percent">%</span>
+        </Col>
+      </Row>
+      <Row class="slider-wrapper" type="flex" align="middle">
+        <Col span="6" class="setting-text">
+          <span>指标五 地域文化景观 权重值：</span>
+        </Col>
+        <Col span="17">
+          <Slider v-model="weight4" show-input :tip-format="format"></Slider>
+        </Col>
+        <Col span="1">
+          <span class="percent">%</span>
+        </Col>
+      </Row>
       <Button @click="submitSetting">确认设置</Button>
+    </Col>
+    <Col span="4">
+      <Remark v-bind:remark="settingRemark"></Remark>
+    </Col>
   </Row>
 </div>
 </template>
 
 <script>
 import TopMenu from './TopMenu'
+import Remark from './Remark'
+import RemarkText from '../assets/RemarksData'
 
 export default {
   data () {
@@ -38,10 +80,11 @@ export default {
       weight1: weights[1],
       weight2: weights[2],
       weight3: weights[3],
-      weight4: weights[4]
+      weight4: weights[4],
+      settingRemark: RemarkText.settingRemark
     }
   },
-  components: { TopMenu },
+  components: { TopMenu, Remark },
   methods: {
     submitSetting: function () {
       if (!this.checkSetting) {
@@ -84,13 +127,22 @@ export default {
 <style scoped>
 
 .slider-wrapper {
-  padding: 8px 0 8px 0;
-  position: relative;
+  padding: 8px 20px 8px 20px;
+}
+
+.setting-text {
+  padding: 10px 0 10px 20px;
+  text-align: left;
+}
+
+.percent {
+  padding: 
 }
 
 .setting-content {
   text-align: center;
-  padding: 40px 20% 40px 20%
+  padding: 40px 0 40px 0;
+  max-width: 1600px;
 }
 
 </style>

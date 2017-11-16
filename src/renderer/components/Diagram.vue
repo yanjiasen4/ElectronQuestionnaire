@@ -3,9 +3,9 @@
     <top-menu v-bind:page="'diagram'"></top-menu>
     <div class="layout-content">
       <Row class="result-intro">
-        <Col span="5">
+        <Col span="5" class="bottom">
           <Menu active-name="total" width="auto" @on-select="switchAspect">
-            <MenuItem name="total">
+            <MenuItem name="total" class="left-nav">
               <span class="layout-text">城镇风貌综合评价结果</span>
             </MenuItem>
             <MenuItem v-for="(item, index) in aspectArray" :name="index" :key="item.name">
@@ -69,6 +69,7 @@
 <script>
 import XLSX from 'xlsx'
 import fs from 'fs'
+import path from 'path'
 import TopMenu from './TopMenu'
 import QuestionView from '../assets/QuestionDataView'
 import DefaultColumnOptions from '../assets/HighChartsOptions/HighChartsColumn'
@@ -81,6 +82,7 @@ export default {
     TopMenu
   },
   data () {
+    const dirPath = path.resolve('exporting')
     let columnOptions = DefaultColumnOptions.options
     let splineOptions = DefaultSplineOptions.options
     let spiderOptions = DefaultSpiderOptions.options
@@ -88,23 +90,30 @@ export default {
     let aspectArray = QuestionView.aspectArray
     let weights = this.$store.state.Score.weights
 
-    var rootScore = new Array(5)
-    var rootLevel = new Array(5)
+    let rootScore = new Array(5)
+    let rootLevel = new Array(5)
     let defaultCategories = []
-    var totalScore = 0
-    var totalLevel = ''
-    for (var i = 0; i < QuestionView.questionIdMap.length - 1; i++) {
-      var tmpScore = 0
-      for (var j = QuestionView.questionIdMap[i]; j < QuestionView.questionIdMap[i + 1]; j++) {
-        tmpScore += scoreData[j]
+    let totalScore = 0
+    let totalLevel = ''
+    for (let i = 0; i < QuestionView.questionIdMap.length - 1; i++) {
+      let tmpScore = 0
+      let answerdQuestionNum = 0
+      for (let j = QuestionView.questionIdMap[i]; j < QuestionView.questionIdMap[i + 1]; j++) {
+        if (scoreData[j] !== 0) {
+          answerdQuestionNum += 1
+          tmpScore += scoreData[j]
+        } else {
+          tmpScore += 0
+        }
       }
-      rootScore[i] = tmpScore / QuestionView.questionNumMap[i]
+      rootScore[i] = tmpScore / (answerdQuestionNum !== 0 ? answerdQuestionNum : 1)
       aspectArray[i].level = this.calcEvaluateLevel(rootScore[i])
       rootLevel[i] = {
         name: aspectArray[i].name,
         level: aspectArray[i].level
       }
       defaultCategories.push(aspectArray[i].name)
+      console.log(weights[i])
       totalScore += rootScore[i] * weights[i] / 100
     }
 
@@ -118,7 +127,7 @@ export default {
     })
     diagramRootScore.push(totalScore)
 
-    var seriesData = [{
+    let seriesData = [{
       name: '城镇',
       data: diagramRootScore
     }]
@@ -141,7 +150,9 @@ export default {
       currSelect: 'total', // total, 0, 1, 2, 3, 4
       aspectMap: QuestionView.aspectMap,
       inputName: false,
-      exportName: ''
+      exportName: '',
+      exportDir: dirPath + '/',
+      exportStatPath: dirPath + '/data.xlsx'
     }
   },
   methods: {
@@ -159,6 +170,66 @@ export default {
         ret = QuestionView.evaluateLevel[4]
       }
       return ret
+    },
+    refreshScore: function () {
+      let columnOptions = DefaultColumnOptions.options
+      let splineOptions = DefaultSplineOptions.options
+      let spiderOptions = DefaultSpiderOptions.options
+      let scoreData = this.$store.state.Score.scoreArray
+      let aspectArray = QuestionView.aspectArray
+      let weights = this.$store.state.Score.weights
+
+      let rootScore = new Array(5)
+      let rootLevel = new Array(5)
+      let defaultCategories = []
+      let totalScore = 0
+      let totalLevel = ''
+      for (let i = 0; i < QuestionView.questionIdMap.length - 1; i++) {
+        let tmpScore = 0
+        let answerdQuestionNum = 0
+        for (let j = QuestionView.questionIdMap[i]; j < QuestionView.questionIdMap[i + 1]; j++) {
+          if (scoreData[j] !== 0) {
+            answerdQuestionNum += 1
+            tmpScore += scoreData[j]
+          } else {
+            tmpScore += 0
+          }
+        }
+        rootScore[i] = tmpScore / (answerdQuestionNum !== 0 ? answerdQuestionNum : 1)
+        aspectArray[i].level = this.calcEvaluateLevel(rootScore[i])
+        rootLevel[i] = {
+          name: aspectArray[i].name,
+          level: aspectArray[i].level
+        }
+        defaultCategories.push(aspectArray[i].name)
+        totalScore += rootScore[i] * weights[i] / 100
+      }
+
+      totalLevel = this.calcEvaluateLevel(totalScore)
+
+      let diagramRootLevel = rootLevel.concat()
+      let diagramRootScore = rootScore.concat()
+      diagramRootLevel.push({
+        name: '城镇风貌综合评分',
+        level: totalLevel
+      })
+      diagramRootScore.push(totalScore)
+
+      let seriesData = [{
+        name: '城镇',
+        data: diagramRootScore
+      }]
+
+      columnOptions.series = splineOptions.series = spiderOptions.series = seriesData
+
+      this.totalScore = totalScore
+      this.totalLevel = totalLevel
+      this.rootScore = rootScore
+      this.rootLevel = rootLevel
+      this.diagramRootLevel = diagramRootLevel
+      this.diagramRootScore = diagramRootScore
+      this.currLevel = rootLevel
+      this.currScore = rootScore
     },
     switchAspect: function (name) {
       this.currSelect = name
@@ -179,7 +250,6 @@ export default {
         aspectLevel = this.diagramRootLevel
         aspectScore = this.diagramRootScore
       } else {
-        console.log('aspect:', aspect)
         let aspectInfo = this.aspectArray[aspect]
 
         let scoreData = this.$store.state.Score.scoreArray
@@ -187,7 +257,7 @@ export default {
         for (let item of aspectInfo.childNode) {
           let score = 0
           let questionNum = 0
-          for (var i = item.questionRange.start - 1; i <= item.questionRange.end - 1; i++) {
+          for (let i = item.questionRange.start - 1; i <= item.questionRange.end - 1; i++) {
             score += scoreData[i]
             questionNum += 1
           }
@@ -225,6 +295,8 @@ export default {
       spiderChart.series[0].update(diagramData)
     },
     exportXlsx: function (filename) {
+      this.checkXLSXDir()
+
       const wb = XLSX.utils.book_new()
 
       let arrayHeader = []
@@ -238,23 +310,24 @@ export default {
 
       for (let index in this.rootLevel) {
         let aspectInfo = this.genAspectArray(index)
+
         let subArrayHeader = []
         let subArrayContent = []
 
         for (let j in aspectInfo.level) {
           subArrayHeader.push(aspectInfo.level[j].name)
-          subArrayContent.push(aspectInfo.score)
         }
+        subArrayContent = aspectInfo.score
 
         const ws = XLSX.utils.aoa_to_sheet([subArrayHeader, subArrayContent])
         XLSX.utils.book_append_sheet(wb, ws, this.rootLevel[index].name)
       }
 
-      XLSX.writeFile(wb, this.exportName + '.xlsx')
+      XLSX.writeFile(wb, this.exportDir + this.exportName + '.xlsx')
 
       let dataExists = true
       try {
-        fs.accessSync('data.xlsx')
+        fs.accessSync(this.exportStatPath)
       } catch (e) {
         dataExists = false
       }
@@ -287,21 +360,20 @@ export default {
 
           for (let j in aspectInfo.level) {
             dsubArrayHeader.push(aspectInfo.level[j].name)
-            dsubArrayContent1.push(aspectInfo.score)
-            dsubArrayContent2.push(aspectInfo.score)
+            dsubArrayContent1.push(aspectInfo.score[j])
+            dsubArrayContent2.push(aspectInfo.score[j])
           }
-
           const dws = XLSX.utils.aoa_to_sheet([dsubArrayHeader, dsubArrayContent1, dsubArrayContent2])
           XLSX.utils.book_append_sheet(dwb, dws, this.rootLevel[index].name)
         }
-        XLSX.writeFile(dwb, 'data.xlsx')
+        XLSX.writeFile(dwb, this.exportStatPath)
       } else {
         this.updateDataXLSX()
       }
     },
     updateDataXLSX: function () {
       // this.readDataXLSX()
-      let workbook = XLSX.readFile('data.xlsx')
+      let workbook = XLSX.readFile(this.exportStatPath)
       let sheetNames = workbook.SheetNames
       const nws = XLSX.utils.book_new()
       let subAspectIndex = 0
@@ -338,16 +410,32 @@ export default {
           subAspectIndex += 1
         }
       }
-      XLSX.writeFile(nws, 'data.xlsx')
+      XLSX.writeFile(nws, this.exportStatPath)
     },
     calcDataCount: function (data) {
-      return Math.round(data[1][1] / data[2][1])
+      for (let i = 1; i < data[1].length; i++) {
+        if (data[2][i] === 0) continue
+        else {
+          return Math.round(data[1][i] / data[2][i])
+        }
+      }
+      return 1
     },
     refreshPage: function () {
       this.$store.commit({
         type: 'SET_PAGE',
         pageId: 1
       })
+    },
+    checkXLSXDir: function () {
+      const dirPath = path.resolve('exporting')
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdir(dirPath, function (err) {
+          if (err) {
+            this.$Message.error('创建文件夹时发生错误:' + err)
+          }
+        })
+      }
     }
   }
 }
@@ -386,6 +474,18 @@ export default {
   padding: 4px 0 10px;
   border-bottom: 1px solid #eee;
   text-align: center;
+}
+
+.bottom {
+  z-index: 0;
+}
+
+.left-nav {
+  z-index: 0.2;
+}
+
+.layout-text {
+  z-index: 0.2;
 }
 
 .detail-intro {

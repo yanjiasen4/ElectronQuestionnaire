@@ -4,6 +4,9 @@
   <div class="welcome" :class="{ hide: activeMain }">
     <div class="welcome-header">
       <p>{{ welcome }}</p>
+      <div class="exp-text">
+        <p>E<sub>综合</sub>=W<sub>1</sub>&times;E<sub>整体风貌</sub>+W<sub>2</sub>&times;E<sub>建筑风貌</sub>+W<sub>3</sub>&times;E<sub>道路风貌</sub>+W<sub>4</sub>&times;E<sub>开发空间</sub>+W<sub>5</sub>&times;E<sub>文化景观</sub></p>
+      </div>
     </div>
     <div class="welcome-button-wrapper">
       <Button size="large" class="button-wrapper" @click="enterMain">开始评价</Button>
@@ -21,6 +24,7 @@
               <page
                 v-bind:questionList="quesData.questionList"
                 v-bind:questionLayer="[quesData.preRange, quesData.graRange, quesData.rootRange]"
+                v-bind:remark="getPageRemark(quesData.id)"
                 v-bind:key="quesData.id">
                 {{ quesData.id }}
               </page>
@@ -47,12 +51,13 @@
 <script>
   import WelcomeData from '../assets/WelcomeData'
   import Data from '../assets/QuestionData'
+  import RemarkData from '../assets/RemarksData'
   import Page from './Question/Page'
   import LeftSide from './LeftSide'
   import TopMenu from './TopMenu'
 
-  var initScore = new Array(Data.maxPage)
-  for (var i = 0; i < initScore.length; i++) {
+  let initScore = new Array(Data.maxPage)
+  for (let i = 0; i < initScore.length; i++) {
     initScore[i] = 0
   }
   export default {
@@ -63,7 +68,8 @@
         welcome: WelcomeData.welcome,
         questionData: Data.questionData,
         maxPage: Data.maxPage,
-        pageScore: initScore
+        pageScore: initScore,
+        remarks: RemarkData.questionRemarks
       }
     },
     methods: {
@@ -91,8 +97,7 @@
       },
       commitPage: function () {
         if (!this.isAllSelected()) {
-          this.$Message.error('本页有问题尚未回答')
-          return false
+          this.$Message.warning('上页有问题尚未回答')
         }
         this.setIsAllPageSelected()
         this.fillinScore()
@@ -101,12 +106,12 @@
       commitAllPage: function () {
         let ret = this.commitPage()
         if (ret && !this.isAllPageSelected) {
-          this.$Message.error('仍有问题尚未回答，请完成后再进入结果展示页面')
+          this.$Message.warning('仍有问题尚未回答，统计结果将忽略未回答问题')
         }
       },
       isAllSelected: function () {
-        var pageQuestions = this.questionData[this.activePageId - 1].questionList.questions
-        var subQuesNum = pageQuestions.length
+        let pageQuestions = this.questionData[this.activePageId - 1].questionList.questions
+        let subQuesNum = pageQuestions.length
         for (let i = 0; i < subQuesNum; i++) {
           if (pageQuestions[i].answer === '') {
             return false
@@ -130,19 +135,29 @@
         })
       },
       fillinScore: function () {
-        var pageQuestions = this.questionData[this.activePageId - 1].questionList.questions
-        var subQuesNum = pageQuestions.length
-        var currPageScore = 0
+        let pageQuestions = this.questionData[this.activePageId - 1].questionList.questions
+        let subQuesNum = pageQuestions.length
+        let answerdQuestionNum = 0
+        let currPageScore = 0
         for (let i = 0; i < subQuesNum; i++) {
           if (pageQuestions[i].answer !== '') {
             currPageScore += parseInt(pageQuestions[i].answer)
+            answerdQuestionNum += 1
           }
         }
-        this.pageScore[this.activePageId - 1] = currPageScore / subQuesNum
+        this.pageScore[this.activePageId - 1] = currPageScore / (answerdQuestionNum !== 0 ? answerdQuestionNum : 1)
         this.$store.commit({
           type: 'SET_SCORE',
           scoreData: this.pageScore
         })
+      },
+      getPageRemark: function (id) {
+        for (let i = 0; i < this.remarks.length; i++) {
+          if (parseInt(this.remarks[i].id) === id) {
+            return this.remarks[i].remark
+          }
+        }
+        return ''
       }
     },
     computed: {
@@ -201,6 +216,10 @@
 
   .welcome-header p {
     font-size: 20px;
+  }
+
+  .exp-text {
+    text-align: center;
   }
 
   .welcome-button-wrapper {

@@ -2,14 +2,8 @@
 <div class="layout">
   <top-menu v-bind:page="'help'"></top-menu>
   <Row class="help-content">
-    <div class="help-list">
-      <p>{{ welcome }}</p>
-    </div>
-    <div class="help-list">
-      <p>{{ settingHelp }}</p>
-    </div>
-    <div class="help-list">
-      <p>{{ exportHelp }}</p>
+    <div v-for="(msg, index) in message" v-bind:key="msg" class="help-list">
+      <p>({{ index }}) {{ msg }}</p>
     </div>
   </Row>
 </div>
@@ -23,9 +17,7 @@ export default {
   components: { TopMenu },
   data () {
     return {
-      welcome: Message.welcome,
-      settingHelp: Message.settingHelp,
-      exportHelp: Message.exportHelp
+      message: [Message.Help, Message.settingHelp, Message.exportHelp, Message.importHelp]
     }
   }
 }
@@ -38,9 +30,9 @@ export default {
 }
 
 .help-list {
-  padding: 40px 20% 20px 20%;
+  padding: 20px 20% 10px 20%;
   text-align: left;
-  min-height: 160px;
+  min-height: 80px;
   text-indent: 40px
 }
 

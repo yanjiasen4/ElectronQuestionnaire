@@ -1,13 +1,13 @@
 <template>
     <li class="select">
         <button @click='toggle' class="list padding-left" :class="openLeaf">
-            <Icon v-if='isFolder && open' type="android-folder-open" size="15"></Icon>
-            <Icon v-else-if='isFolder && !open' type="android-folder" size="15"></Icon>
+            <Icon v-if='isFolder && open' :type="openedIconDir[height]" size="15"></Icon>
+            <Icon v-else-if='isFolder && !open' :type="closedIconDir[height]" size="15"></Icon>
             <!--isFolder判断是否存在子级改变图标-->
             <Icon v-if='!isFolder' type="document-text" size="15px"></Icon> {{model.data.menuName}}
         </button>
         <ul v-show="open" v-if='isFolder' class="padding-left">
-            <items v-for='cel in model.childTreeNode' :model='cel' :key="cel.id" :index="cel.id"></items>
+            <items v-for='cel in model.childTreeNode' :model='cel' :height="height+1" :key="cel.id" :index="cel.id"></items>
         </ul>
     </li>
 </template>
@@ -17,10 +17,12 @@ import questionData from '../../assets/QuestionDataView'
 
 export default {
   name: 'items',
-  props: ['model', 'index'],
+  props: ['model', 'index', 'height'],
   data () {
     return {
-      opened: false
+      opened: false,
+      openedIconDir: ['android-folder-open', 'ios-book-outline'],
+      closedIconDir: ['android-folder', 'ios-book']
     }
   },
   components: {},

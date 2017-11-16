@@ -2,6 +2,9 @@
   <div class="page">
     <div class="header">
       <h1>{{ questionLayer[0] }}</h1>
+    <div v-if="remark" class="remark">
+        {{ remark }}
+      </div>
     </div>
     <question
       v-for="ques in questionList.questions"
@@ -17,7 +20,7 @@
   export default {
     name: 'page',
     components: { Question },
-    props: ['questionList', 'questionLayer']
+    props: ['questionList', 'questionLayer', 'remark']
   }
 </script>
 
@@ -41,6 +44,10 @@
 .header {
   padding: 16px 20px 16px 20px;
   border-bottom: 1px solid #eee;
+}
+
+.remark {
+  padding: 12px 20px 12px 20px;
 }
 
 </style>

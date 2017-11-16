@@ -1,0 +1,12 @@
+<template>
+  <div class="loading"></div>
+</template>
+
+<script>
+export default {
+  name: 'Loading',
+  mounted () {
+    this.$router.push('/diagram')
+  }
+}
+</script>

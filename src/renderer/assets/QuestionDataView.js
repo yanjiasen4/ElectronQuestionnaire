@@ -1,6 +1,7 @@
 export default {
   questionIdMap: [0, 14, 30, 46, 63, 71],
   questionIdDetailMap: [0, 3, 5, 8, 10, 14, 17, 19, 21, 24, 27, 30, 32, 36, 37, 39, 42, 45, 46, 48, 51, 54, 56, 59, 63, 65, 68, 71],
+  questionNameMap: ['城镇风貌综合评估结果', '整体风貌', '建筑风貌', '道路风貌', '开放空间', '地域文化景观'],
   aspectArray: [{
     name: '整体风貌',
     level: '',

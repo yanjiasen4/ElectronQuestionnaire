@@ -1,6 +1,6 @@
 <template>
   <div class="left-side">
-    <item :model="model" :index="model.id" v-for="model in treeData" :key="model.id">
+    <item :model="model" :height="rootHeight" :index="model.id" v-for="model in treeData" :key="model.id">
     </item>
   </div>
 </template>
@@ -13,7 +13,8 @@ export default {
   name: 'LeftSide',
   data () {
     return {
-      treeData: Data.questionStrc
+      treeData: Data.questionStrc,
+      rootHeight: 0
     }
   },
   components: {
